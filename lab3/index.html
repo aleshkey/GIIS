@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Графический редактор</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+
+        .toolbar {
+            margin-bottom: 10px;
+        }
+
+        .toolbar button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="toolbar">
+    <button onclick="setCurveType('hermite')">Форма Эрмита</button>
+    <button onclick="setCurveType('bezier')">Форма Безье</button>
+    <button onclick="setCurveType('bspline')">B-сплайн</button>
+    <button onclick="clearCanvas()">Отчистить</button>
+</div>
+<canvas id="canvas" width="800" height="600"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../lab3/app.js"></script>
+</body>
+</html>

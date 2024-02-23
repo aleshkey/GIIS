@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>graph</title>
+    <style>
+        #canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+
+        #toolbar {
+            margin-bottom: 10px;
+        }
+
+        #toolbar button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="600"></canvas>
+<div id = "toolbar">
+    <select id="curveType">
+        <option value="circle">Окружность</option>
+        <option value="ellipse">Эллипс</option>
+        <option value="hyperbola">Гипербола</option>
+        <option value="parabola">Парабола</option>
+    </select>
+    <button onclick="clearCanvas()">Очистить холст</button>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
