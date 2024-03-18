@@ -1,15 +1,182 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>3D Editor</title>
+    <title>Простой графический редактор</title>
     <style>
-        body { margin: 0; }
-        canvas { display: block; }
+        #canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
     </style>
 </head>
 <body>
-<canvas id="canvas" width="800" height="600"></canvas>
-<script src="./app.js"></script>
+<canvas id="canvas" width="500" height="500"></canvas>
+
+<div>
+    <button id="drawCircle">Рисовать круг</button>
+    <button id="drawSquare">Рисовать квадрат</button>
+    <button id="fillZatr">Затравкой</button>
+    <button id="fillRazv">Разверткой</button>
+    <input type="color" id="fillColorPicker">
+</div>
+
+<script>
+    let endX;
+    let endY;
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let startX, startY;
+        let currentShape = null;
+        let fillColor = [255, 0, 0, 255]; // Красный цвет для заливки
+        let isActive = 'razv';
+        let isFilling = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            startX = e.offsetX;
+            startY = e.offsetY;
+            if (!isFilling) {
+                isDrawing = true;
+            }
+            if (isFilling){
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                const clickedPixel = (startY * canvas.width + startX) * 4;
+                const targetColor = [
+                    data[clickedPixel],
+                    data[clickedPixel + 1],
+                    data[clickedPixel + 2],
+                    data[clickedPixel + 3]
+                ];
+
+                if (arrayEquals(fillColor, targetColor)) return;
+
+                fillArea(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height);
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+
+            const currentX = e.offsetX;
+            const currentY = e.offsetY;
+
+            if (currentShape === 'circle') {
+                const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.beginPath();
+                ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (currentShape === 'square') {
+                const width = currentX - startX;
+                const height = currentY - startY;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeRect(startX, startY, width, height);
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            isDrawing = false;
+            endX = e.offsetX;
+            endY = e.offsetY;
+            console.log(endX + " "+endY)
+
+
+            if (currentShape === 'circle') {
+                const radius = Math.sqrt(Math.pow(e.offsetX - startX, 2) + Math.pow(e.offsetY - startY, 2));
+                ctx.beginPath();
+                ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (currentShape === 'square') {
+                const width = e.offsetX - startX;
+                const height = e.offsetY - startY;
+                ctx.strokeRect(startX, startY, width, height);
+            }
+        });
+
+        const drawCircleButton = document.getElementById('drawCircle');
+        drawCircleButton.addEventListener('click', () => {
+            isFilling=false;
+            currentShape = 'circle';
+            canvas.style.cursor = 'crosshair';
+        });
+
+        const drawSquareButton = document.getElementById('drawSquare');
+        drawSquareButton.addEventListener('click', () => {
+            isFilling=false;
+            currentShape = 'square';
+            canvas.style.cursor = 'crosshair';
+        });
+
+        const fillZatrButton = document.getElementById('fillZatr');
+        fillZatrButton.addEventListener('click', () => {
+            isFilling=true;
+            isActive = 'zatr';
+        });
+
+        const fillRazvButton = document.getElementById('fillRazv');
+        fillRazvButton.addEventListener('click', () => {
+            isFilling=true;
+            isActive = 'razv';
+        });
+
+        const fillColorPicker = document.getElementById('fillColorPicker');
+        fillColorPicker.addEventListener('input', (e) => {
+            const hexColor = e.target.value;
+            fillColor = hexToRgb(hexColor);
+        });
+
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return [r, g, b, 255];
+        }
+
+        function fillArea(x, y, targetColor, fillColor, data, width, height) {
+            const stack = [[x, y]];
+
+            while (stack.length) {
+                const [currentX, currentY] = stack.pop();
+                const pixel = (currentY * width + currentX) * 4;
+                const [r, g, b, a] = [
+                    data[pixel],
+                    data[pixel + 1],
+                    data[pixel + 2],
+                    data[pixel + 3]
+                ];
+
+                if (arrayEquals([r, g, b, a], targetColor)) {
+                    data[pixel] = fillColor[0];
+                    data[pixel + 1] = fillColor[1];
+                    data[pixel + 2] = fillColor[2];
+                    data[pixel + 3] = fillColor[3];
+
+                    if (currentX > 0 && arrayEquals([data[pixel - 4], data[pixel - 3], data[pixel - 2], data[pixel - 1]], targetColor)) {
+                        stack.push([currentX - 1, currentY]);
+                    }
+                    if (currentX < width - 1 && arrayEquals([data[pixel + 4], data[pixel + 5], data[pixel + 6], data[pixel + 7]], targetColor)) {
+                        stack.push([currentX + 1, currentY]);
+                    }
+                    if (currentY > 0 && arrayEquals([data[pixel - width * 4], data[pixel - width * 4 + 1], data[pixel - width * 4 + 2], data[pixel - width * 4 + 3]], targetColor)) {
+                        stack.push([currentX, currentY - 1]);
+                    }
+                    if (currentY < height - 1 && arrayEquals([data[pixel + width * 4], data[pixel + width * 4 + 1], data[pixel + width * 4 + 2], data[pixel + width * 4 + 3]], targetColor)) {
+                        stack.push([currentX, currentY + 1]);
+                    }
+                }
+            }
+        }
+
+        function arrayEquals(a, b) {
+            return a.length === b.length && a.every((value, index) => value === b[index]);
+        }
+    });
+</script>
 </body>
 </html>
