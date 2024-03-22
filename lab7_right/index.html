@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Триангуляция Делоне и диаграмма Вороного</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        svg {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+<svg id="visualization" style="width: 500px;height: 500px"></svg>
+
+<script>
+    // Создание SVG-элемента
+    var svg = d3.select("#visualization");
+
+    // Заданный набор точек
+    var points = [];
+
+    // Триангуляция Делоне
+    var delaunay = null;
+
+    // Диаграмма Вороного
+    var voronoi = null;
+
+    // Функция для обновления графического представления
+    function updateVisualization() {
+        // Очистка SVG-контейнера
+        svg.selectAll("*").remove();
+
+        // Визуализация триангуляции Делоне
+        svg.append("g")
+            .attr("class", "triangulation")
+            .selectAll("path")
+            .data(delaunay.trianglePolygons())
+            .enter().append("path")
+            .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+            .style("stroke", "black") // Устанавливаем цвет линии
+            .style("stroke-width", 1) // Устанавливаем толщину линии
+            .style("fill", "none"); // Запрещаем закрашивание
+
+        // Визуализация точек
+        svg.append("g")
+            .attr("class", "points")
+            .selectAll("circle")
+            .data(points)
+            .enter().append("circle")
+            .attr("cx", function(d) { return d[0]; })
+            .attr("cy", function(d) { return d[1]; })
+            .attr("r", 3);
+
+        // Визуализация диаграммы Вороного
+        svg.append("g")
+            .attr("class", "voronoi")
+            .selectAll("path")
+            .data(voronoi.cellPolygons())
+            .enter().append("path")
+            .attr("d", function(d) { return "M" + d.join("L") + "Z"; })
+            .style("stroke", "black") // Устанавливаем цвет линии
+            .style("stroke-width", 1) // Устанавливаем толщину линии
+            .style("fill", "none"); // Запрещаем закрашивание
+    }
+
+    // Обработчик события клика мыши
+    function handleMouseClick() {
+        // Получение координат точки относительно SVG-элемента
+        var point = d3.pointer(event, svg.node());
+
+        // Добавление точки в набор
+        points.push(point);
+
+        // Обновление триангуляции и диаграммы Вороного
+        delaunay = d3.Delaunay.from(points);
+        voronoi = delaunay.voronoi();
+
+        // Обновление графического представления
+        updateVisualization();
+    }
+
+    // Привязка обработчика события клика мыши к SVG-элементу
+    svg.on("click", handleMouseClick);
+
+</script>
+</body>
+</html>
