@@ -9,17 +9,18 @@
     </style>
 </head>
 <body>
-<canvas id="canvas" width="400" height="400"></canvas>
 <button onclick="startPolygon()">Начать полигон</button>
 <button onclick="checkConvexity()">Проверить выпуклость</button>
 <button onclick="calculateNormals()">Рассчитать нормали</button>
 <button onclick="computeConvexHullGraham()">Выпуклая оболочка (Грэхем)</button>
 <button onclick="computeConvexHullJarvis()">Выпуклая оболочка (Джарвис)</button>
-
+<button onClick="clearCanvas()">Отчистить</button>
+<br>
+<canvas id="canvas" width="600" height="600"></canvas>
 <script>
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-    const points = [];
+    let points = [];
     let isDrawing = false;
 
     function startPolygon() {
@@ -37,6 +38,7 @@
         const y = event.clientY - rect.top;
         points.push({ x, y });
         drawPoint(x, y);
+        drawPolygon()
     }
 
     function drawPoint(x, y, color = "black") {
@@ -76,28 +78,27 @@
             alert("Минимальное количество точек для проверки выпуклости: 3");
             return;
         }
-
-        const orientation = getOrientation();
-        if (orientation === 0) {
-            alert("Полигон не является выпуклым");
-        } else {
-            alert("Полигон является выпуклым");
+        for(let i =0; i< points.length-3; i++) {
+            const orientation = getOrientation(points[i], points[i+1], points[i+2]);
+            console.log(orientation)
+            if (orientation <= 0) {
+                alert("Полигон не является выпуклым");
+                return;
+            }
         }
+        alert("Полигон является выпуклым");
     }
 
-    function getOrientation() {
-        const p1 = points[0];
-        const p2 = points[1];
-        const p3 = points[2];
+    const getOrientation = (p1, p2, p3) => {
         const val = (p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y);
         if (val === 0) {
-            return 0; // коллинеарные точки
+            return 0; // Коллинеарные точки
         } else if (val > 0) {
-            return 1; // по часовой стрелке
+            return 1; // По часовой стрелке
         } else {
-            return -1; // против часовой стрелки
+            return -1; // Против часовой стрелки
         }
-    }
+    };
 
     function calculateNormals() {
         if (points.length < 3) {
@@ -120,11 +121,11 @@
             const normalizedNormalX = normalX / normalLength;
             const normalizedNormalY = normalY / normalLength;
 
-            const normalStartX = currPoint.x + normalizedNormalX * 10;
-            const normalStartY = currPoint.y + normalizedNormalY * 10;
+            const normalStartX = currPoint.x + normalizedNormalX * 100;
+            const normalStartY = currPoint.y + normalizedNormalY * 100;
 
-            const normalEndX = currPoint.x - normalizedNormalX * 10;
-            const normalEndY = currPoint.y - normalizedNormalY * 10;
+            const normalEndX = currPoint.x - normalizedNormalX * 100;
+            const normalEndY = currPoint.y - normalizedNormalY * 100;
 
             drawLine(normalStartX, normalStartY, normalEndX, normalEndY, "red");
         }
@@ -146,11 +147,11 @@
         const getOrientation = (p, q, r) => {
             const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
             if (val === 0) {
-                return 0; // коллинеарные точки
+                return 0;
             } else if (val > 0) {
-                return 1; // по часовой стрелке
+                return 1;
             } else {
-                return -1; // против часовой стрелки
+                return -1;
             }
         };
 
@@ -184,11 +185,11 @@
         const getOrientation = (p, q, r) => {
             const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
             if (val === 0) {
-                return 0; // коллинеарные точки
+                return 0;
             } else if (val > 0) {
-                return 1; // по часовой стрелке
+                return 1;
             } else {
-                return -1; // против часовой стрелки
+                return -1;
             }
         };
 
@@ -217,6 +218,11 @@
             const endPoint = hullPoints[(i + 1) % hullPoints.length];
             drawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y, "blue");
         }
+    }
+    function clearCanvas(){
+        isDrawing = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        points = [];
     }
 </script>
 </body>

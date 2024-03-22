@@ -51,17 +51,19 @@
                     data[clickedPixel + 3]
                 ];
 
-                if (arrayEquals(fillColor, targetColor)) return;
+                console.log(isActive)
 
-                fillArea(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height);
-
+                if (isActive==='zatr') {
+                    if (arrayEquals(fillColor, targetColor)) return;
+                    fillArea(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height);
+                }
+                else fillAreaRazv(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height)
                 ctx.putImageData(imageData, 0, 0);
             }
         });
 
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-
             const currentX = e.offsetX;
             const currentY = e.offsetY;
 
@@ -137,6 +139,56 @@
             const b = bigint & 255;
             return [r, g, b, 255];
         }
+
+        function fillAreaRazv(x, y, targetColor, fillColor, data, width, height) {
+            const stack = [[startX, startY]];
+            const baseColor = getColorAtPixel(startX, startY);
+
+            function getColorAtPixel(x, y) {
+                const pixelIndex = (y * width + x) * 4;
+                return [
+                    data[pixelIndex],
+                    data[pixelIndex + 1],
+                    data[pixelIndex + 2],
+                    data[pixelIndex + 3]
+                ];
+            }
+
+            function setColorAtPixel(x, y) {
+                const pixelIndex = (y * width + x) * 4;
+                data[pixelIndex] = fillColor[0];
+                data[pixelIndex + 1] = fillColor[1];
+                data[pixelIndex + 2] = fillColor[2];
+                data[pixelIndex + 3] = fillColor[3];
+            }
+
+            function arrayEquals(arr1, arr2) {
+                return arr1[0] === arr2[0] && arr1[1] === arr2[1] && arr1[2] === arr2[2] && arr1[3] === arr2[3];
+            }
+
+            while (stack.length) {
+                const [currentX, currentY] = stack.pop();
+                const pixelColor = getColorAtPixel(currentX, currentY);
+
+                if (arrayEquals(pixelColor, baseColor) && !arrayEquals(pixelColor, fillColor)) {
+                    setColorAtPixel(currentX, currentY);
+
+                    if (currentX > 0) {
+                        stack.push([currentX - 1, currentY]);
+                    }
+                    if (currentX < width - 1) {
+                        stack.push([currentX + 1, currentY]);
+                    }
+                    if (currentY > 0) {
+                        stack.push([currentX, currentY - 1]);
+                    }
+                    if (currentY < height - 1) {
+                        stack.push([currentX, currentY + 1]);
+                    }
+                }
+            }
+        }
+
 
         function fillArea(x, y, targetColor, fillColor, data, width, height) {
             const stack = [[x, y]];
