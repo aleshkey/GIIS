@@ -33,18 +33,18 @@
     }
 
     function computeOutCode(x, y, xmin, ymin, xmax, ymax) {
-        let code = INSIDE; // Инициализация кода
+        let code = INSIDE;
 
         if (x < xmin) {
-            code |= LEFT; // Установка бита "слева"
+            code |= LEFT;
         } else if (x > xmax) {
-            code |= RIGHT; // Установка бита "справа"
+            code |= RIGHT;
         }
 
         if (y < ymin) {
-            code |= TOP; // Установка бита "сверху"
+            code |= TOP;
         } else if (y > ymax) {
-            code |= BOTTOM; // Установка бита "снизу"
+            code |= BOTTOM;
         }
 
         return code;
@@ -62,32 +62,25 @@
 
         while (true) {
             if (!(code1 | code2)) {
-                // Оба конца отрезка внутри окна, принимаем отрезок
                 accept = true;
                 break;
             } else if (code1 & code2) {
-                // Оба конца отрезка находятся на одной стороне от окна, отбрасываем отрезок
                 break;
             } else {
-                // Отрезок пересекает границу окна, выполняем отсечение
                 let x, y;
 
                 const codeOut = code1 || code2;
 
                 if (codeOut & TOP) {
-                    // Отрезок пересекает верхнюю границу окна
                     x = x1 + ((x2 - x1) * (ymin - y1)) / (y2 - y1);
                     y = ymin;
                 } else if (codeOut & BOTTOM) {
-                    // Отрезок пересекает нижнюю границу окна
                     x = x1 + ((x2 - x1) * (ymax - y1)) / (y2 - y1);
                     y = ymax;
                 } else if (codeOut & RIGHT) {
-                    // Отрезок пересекает правую границу окна
                     y = y1 + ((y2 - y1) * (xmax - x1)) / (x2 - x1);
                     x = xmax;
                 } else if (codeOut & LEFT) {
-                    // Отрезок пересекает левую границу окна
                     y = y1 + ((y2 - y1) * (xmin - x1)) / (x2 - x1);
                     x = xmin;
                 }
@@ -114,10 +107,8 @@
         const lineCount = lines.length;
 
         if (lineCount === 0) {
-            // Если это первая линия, просто сохраняем координаты начальной точки
             lines.push({ x1: x, y1: y });
         } else {
-            // Для последующих линий выполняем отсечение и сохраняем координаты конечной точки
             const lastLine = lines[lineCount - 1];
             const { x1, y1 } = lastLine;
             robertsAlgorithm(x1, y1, x, y);

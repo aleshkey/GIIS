@@ -23,13 +23,14 @@
 <script>
     let endX;
     let endY;
+    let debugging = true;
     document.addEventListener('DOMContentLoaded', () => {
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
         let startX, startY;
         let currentShape = null;
-        let fillColor = [255, 0, 0, 255]; // Красный цвет для заливки
+        let fillColor = [0, 0, 0, 255];
         let isActive = 'razv';
         let isFilling = false;
 
@@ -58,7 +59,9 @@
                     fillArea(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height);
                 }
                 else fillAreaRazv(startX, startY, targetColor, fillColor, data, canvas.width, canvas.height)
-                ctx.putImageData(imageData, 0, 0);
+                if (!debugging) {
+                    ctx.putImageData(imageData, 0, 0);
+                }
             }
         });
 
@@ -141,8 +144,18 @@
         }
 
         function fillAreaRazv(x, y, targetColor, fillColor, data, width, height) {
-            const stack = [[startX, startY]];
-            const baseColor = getColorAtPixel(startX, startY);
+            let baseColor = getColorAtPixel(startX, startY);
+            let cX = startX;
+            let cY = startY;
+            let pC = getColorAtPixel(cX, cY);
+
+            while (arrayEquals(pC, baseColor)){
+                cY--;
+                pC = getColorAtPixel(cX, cY-1);
+            }
+
+            const stack = [[cX, cY]];
+            baseColor = getColorAtPixel(startX, startY);
 
             function getColorAtPixel(x, y) {
                 const pixelIndex = (y * width + x) * 4;
@@ -170,57 +183,80 @@
                 const [currentX, currentY] = stack.pop();
                 const pixelColor = getColorAtPixel(currentX, currentY);
 
+
                 if (arrayEquals(pixelColor, baseColor) && !arrayEquals(pixelColor, fillColor)) {
                     setColorAtPixel(currentX, currentY);
+                    debug(currentX, currentY, fillColor);
 
-                    if (currentX > 0) {
-                        stack.push([currentX - 1, currentY]);
-                    }
-                    if (currentX < width - 1) {
-                        stack.push([currentX + 1, currentY]);
-                    }
                     if (currentY > 0) {
                         stack.push([currentX, currentY - 1]);
                     }
                     if (currentY < height - 1) {
                         stack.push([currentX, currentY + 1]);
                     }
+                    if (currentX > 0) {
+                        stack.push([currentX - 1, currentY]);
+                    }
+                    if (currentX < width - 1) {
+                        stack.push([currentX + 1, currentY]);
+                    }
+
                 }
+            }
+        }
+
+        function debug(currentX, currentY, fillColor){
+            if (debugging){
+                setTimeout(()=>{
+                    ctx.fillStyle = `rgba(${fillColor.join()})`;
+                    ctx.fillRect(currentX, currentY, 1, 1);
+                }, 50)
             }
         }
 
 
         function fillArea(x, y, targetColor, fillColor, data, width, height) {
             const stack = [[x, y]];
+            const baseColor = getColorAtPixel(x, y);
+
+            function getColorAtPixel(x, y) {
+                const pixelIndex = (y * width + x) * 4;
+                return [
+                    data[pixelIndex],
+                    data[pixelIndex + 1],
+                    data[pixelIndex + 2],
+                    data[pixelIndex + 3]
+                ];
+            }
+
+            function setColorAtPixel(x, y) {
+                const pixelIndex = (y * width + x) * 4;
+                data[pixelIndex] = fillColor[0];
+                data[pixelIndex + 1] = fillColor[1];
+                data[pixelIndex + 2] = fillColor[2];
+                data[pixelIndex + 3] = fillColor[3];
+            }
+
+            function isColorMatch(color1, color2) {
+                return color1[0] === color2[0] && color1[1] === color2[1] && color1[2] === color2[2] && color1[3] === color2[3];
+            }
 
             while (stack.length) {
                 const [currentX, currentY] = stack.pop();
-                const pixel = (currentY * width + currentX) * 4;
-                const [r, g, b, a] = [
-                    data[pixel],
-                    data[pixel + 1],
-                    data[pixel + 2],
-                    data[pixel + 3]
-                ];
 
-                if (arrayEquals([r, g, b, a], targetColor)) {
-                    data[pixel] = fillColor[0];
-                    data[pixel + 1] = fillColor[1];
-                    data[pixel + 2] = fillColor[2];
-                    data[pixel + 3] = fillColor[3];
 
-                    if (currentX > 0 && arrayEquals([data[pixel - 4], data[pixel - 3], data[pixel - 2], data[pixel - 1]], targetColor)) {
-                        stack.push([currentX - 1, currentY]);
-                    }
-                    if (currentX < width - 1 && arrayEquals([data[pixel + 4], data[pixel + 5], data[pixel + 6], data[pixel + 7]], targetColor)) {
-                        stack.push([currentX + 1, currentY]);
-                    }
-                    if (currentY > 0 && arrayEquals([data[pixel - width * 4], data[pixel - width * 4 + 1], data[pixel - width * 4 + 2], data[pixel - width * 4 + 3]], targetColor)) {
-                        stack.push([currentX, currentY - 1]);
-                    }
-                    if (currentY < height - 1 && arrayEquals([data[pixel + width * 4], data[pixel + width * 4 + 1], data[pixel + width * 4 + 2], data[pixel + width * 4 + 3]], targetColor)) {
-                        stack.push([currentX, currentY + 1]);
-                    }
+                if (currentX < 0 || currentX >= width || currentY < 0 || currentY >= height)
+                    continue;
+
+                const pixelColor = getColorAtPixel(currentX, currentY);
+                if (isColorMatch(pixelColor, baseColor) && !isColorMatch(pixelColor, fillColor)) {
+                    debug(currentX,currentY, fillColor);
+                    setColorAtPixel(currentX, currentY);
+
+                    stack.push([currentX - 1, currentY]);
+                    stack.push([currentX + 1, currentY]);
+                    stack.push([currentX, currentY - 1]);
+                    stack.push([currentX, currentY + 1]);
                 }
             }
         }
